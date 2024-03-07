@@ -1,0 +1,101 @@
+apiVersion: nifi.konpyutaika.com/v1
+kind: NifiCluster
+metadata:
+  name: nifikop
+spec:
+  clusterImage: apache/nifi:1.23.2
+  externalServices:
+  - name: nifikop
+    spec:
+      portConfigs:
+      - internalListenerName: https
+        port: 443
+      - internalListenerName: prometheus
+        port: 9092
+      - internalListenerName: s2s
+        port: 10000
+      type: ClusterIP
+  listenersConfig:
+    internalListeners:
+    - containerPort: 8443
+      name: https
+      type: https
+    - containerPort: 6007
+      name: cluster
+      type: cluster
+    - containerPort: 10000
+      name: s2s
+      type: s2s
+    - containerPort: 9092
+      name: prometheus
+      type: prometheus
+    sslSecrets:
+      create: true
+      tlsSecretName: nifikop-tls
+  nifiClusterTaskSpec:
+    retryDurationMinutes: 10
+  nodeConfigGroups:
+    default_group:
+      fsGroup: 1337
+      isNode: true
+      resourcesRequirements:
+        limits:
+          cpu: "6"
+          memory: 4Gi
+        requests:
+          cpu: "6"
+          memory: 3Gi
+      tolerations:
+      - effect: NoExecute
+        key: dedicated
+        operator: Equal
+        value: instances
+  nodes:
+  - id: 0
+    labels:
+      nifi_cr: nifikop
+      nifi_node_group: default_group
+    nodeConfigGroup: default_group
+  propagateLabels: true
+  readOnlyConfig:
+    bootstrapProperties:
+      nifiJvmMemory: 4g
+    maximumTimerDrivenThreadCount: 40
+    nifiProperties:
+      overrideConfigMap:
+        data: nifi.properties
+        name: nifi-config
+        namespace: squid-system
+      overrideConfigs: |
+        nifi.nar.library.autoload.directory=../extensions
+        nifi.security.identity.mapping.pattern.dn=CN=([^,]*)(?:, (?:O|OU)=.*)?
+        nifi.security.identity.mapping.value.dn=$1
+        nifi.security.identity.mapping.transform.dn=NONE
+        nifi.content.repository.directory.rep1=../content-additional/rep1
+        nifi.content.repository.directory.rep2=../content-additional/rep2
+        nifi.provenance.repository.directory.rep1=../provenance-additional/rep1
+        nifi.provenance.repository.directory.rep2=../provenance-additional/rep2
+        nifi.sensitive.props.key=nifikopnifikopnifikop
+      webProxyHosts:
+      - nifikop.konpyutaika.com:443
+      - nifikop.konpyutaika.com
+  service:
+    headlessEnabled: true
+  singleUserConfiguration:
+    authorizerEnabled: true
+    enabled: true
+    secretKeys:
+      username: username
+      password: password
+    secretRef:
+      name: nifikop
+  zkAddress: zookeeper.zookeeper:2181
+  zkPath: /nifikop-instances
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: nifikop
+stringData:
+  username: nifikop
+  password: nifikopnifikopnifikop
