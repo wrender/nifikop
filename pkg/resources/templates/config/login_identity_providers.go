@@ -69,7 +69,7 @@ var LoginIdentityProvidersTemplate = `<?xml version="1.0" encoding="UTF-8" stand
     <provider>
         <identifier>ldap-provider</identifier>
         <class>org.apache.nifi.ldap.LdapProvider</class>
-        <property name="Authentication Strategy">{{.LdapConfiguration.AuthenticationStrategy}}</property>
+        <property name="Authentication Strategy">{{or .LdapConfiguration.AuthenticationStrategy "START_TLS"}}</property>
         <property name="Manager DN">{{.LdapConfiguration.ManagerDn}}</property>
         <property name="Manager Password">{{.LdapConfiguration.ManagerPassword}}</property>
         <property name="TLS - Keystore">{{.LdapConfiguration.TLSKeystore}}</property>
@@ -82,7 +82,7 @@ var LoginIdentityProvidersTemplate = `<?xml version="1.0" encoding="UTF-8" stand
         <property name="TLS - Protocol">{{.LdapConfiguration.Protocol}}</property>
         <property name="TLS - Shutdown Gracefully">{{.LdapConfiguration.ShutdownGracefully}}</property>
         
-        <property name="Referral Strategy">{{.LdapConfiguration.ReferralStrategy}}</property>
+        <property name="Referral Strategy">{{or .LdapConfiguration.ReferralStrategy "FOLLOW"}}</property>
         <property name="Connect Timeout">10 secs</property>
         <property name="Read Timeout">10 secs</property>
         <property name="Url">{{.LdapConfiguration.Url}}</property>
